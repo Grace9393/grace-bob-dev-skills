@@ -1,0 +1,53 @@
+{
+  "skill_name": "ibm-grill-me",
+  "evals": [
+    {
+      "id": 1,
+      "eval_name": "vague-modernization-request",
+      "prompt": "We need to modernize our systems. They're old and causing problems. Can you help us figure out what to do?",
+      "expected_output": "Triggers skill without prompting. Asks 25+ questions across all 8 interrogation lenses before proposing anything. Documents assumptions, constraints, and risks. Creates versioned shared-understanding document.",
+      "files": [],
+      "assertions": []
+    },
+    {
+      "id": 2,
+      "eval_name": "contradictory-requirements",
+      "prompt": "I need a real-time dashboard showing sales data as it happens, with live updates every second. The data comes from our data warehouse which refreshes overnight at 2am. Budget is $15k and we need it done in 3 weeks.",
+      "expected_output": "Surfaces the contradiction (real-time vs batch refresh). Asks about true latency requirements, explores alternatives. Documents constraint trade-offs. Questions aggressive timeline/budget.",
+      "files": [],
+      "assertions": []
+    },
+    {
+      "id": 3,
+      "eval_name": "contact-centre-ai-transformation",
+      "prompt": "ok so my director wants us to 'transform the contact centre with AI' and she sent me this slide deck with all these buzzwords like 'agent copilot' and 'intelligent routing'. we have about 200 agents handling calls and emails, using some old Avaya system and Salesforce. idk where to even start honestly, can you help me scope this properly before i go back to her?",
+      "expected_output": "Consults domain reference for contact centres. Asks about current volumes, KPIs, integration constraints, AI use-cases by priority, data readiness, rollout strategy.",
+      "files": [],
+      "assertions": []
+    },
+    {
+      "id": 4,
+      "eval_name": "undertrigger-test-implicit-discovery",
+      "prompt": "I'm thinking about moving our apps to AWS. We're currently on-prem with about 50 VMs running various services - web apps, databases, file servers. Not sure if we should lift-and-shift or re-architect.",
+      "expected_output": "Triggers skill even though user didn't say 'grill me'. Proactively enters discovery mode. Asks about constraints, dependencies, compliance requirements, current pain points, success criteria.",
+      "files": [],
+      "assertions": []
+    },
+    {
+      "id": 5,
+      "eval_name": "high-stakes-rfp-response",
+      "prompt": "We just got an RFP from a big potential client - government agency, worth about $2M/year. They want a full digital transformation program including cloud migration, new CRM, data analytics platform, and change management. RFP is 200 pages. Responses due in 6 weeks. I need to figure out if we should bid and what our approach should be.",
+      "expected_output": "Recognizes high-stakes scenario. Enters discovery mode. Asks about win probability, competitive position, teaming strategy, resource availability. Uses pre-mortem analysis.",
+      "files": [],
+      "assertions": []
+    },
+    {
+      "id": 6,
+      "eval_name": "salesforce-implementation-discovery",
+      "prompt": "My company just bought Salesforce licenses for our sales team (about 30 people). We need to implement Sales Cloud and integrate it with our existing systems - Oracle ERP for orders, custom billing system, marketing automation tool. I'm the project manager and need to build the project plan.",
+      "expected_output": "Triggers skill. Asks about current sales process, pain points, data migration scope, integration architecture, customization requirements, user adoption strategy, timeline/budget constraints.",
+      "files": [],
+      "assertions": []
+    }
+  ]
+}

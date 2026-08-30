@@ -1,0 +1,56 @@
+schema_version: 1
+batch_id: example-corpus
+corpus_dir: ./corpus
+source_root: ./source-documents
+
+defaults:
+  language: en-GB
+  confidentiality: internal
+  converter: auto
+  categorisation: auto
+  image_descriptions: missing-only
+
+converter_routes:
+  - match:
+      extension: .md
+    converter: passthrough
+  - match:
+      extension: .qmd
+    converter: passthrough
+  - match:
+      extension: .txt
+    converter: plain_text
+  - match:
+      extension: .docx
+    converter: docling
+    fallback: docx_basic
+  - match:
+      extension: .pdf
+    converter: docling
+    fallback: markitdown
+
+taxonomy:
+  path: taxonomy.yaml
+  create_missing_categories: false
+  auto_confidence_threshold: 0.65
+
+targets:
+  sqlite:
+    enabled: true
+    output: skills/ibm-bid-library/docs.sqlite
+  zvec:
+    enabled: false
+    output: skills/ibm-bid-library-zvec/references/bid_library_zvec
+  qmd:
+    enabled: false
+    output: ./qmd-collections/ibm-bid-library
+    collection: ibm-bid-library
+
+documents:
+  - source: example.docx
+    document_id: example
+    title: Example Document
+    category: Documentation
+    category_source: manual
+    tags:
+      - example
