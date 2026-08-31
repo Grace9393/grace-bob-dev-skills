@@ -1,9 +1,16 @@
 # Exclude local dev scripts - Process Studio flags package name strings in .py files
+*.py
 skills/*/scripts/
+skills/*/src/
+skills/*/mcp_server/
 skills/*/requirements.txt
 skills/*/tests/
 skills/*/evals/
 skills/*/examples/
 skills/*/core/
 skills/*/templates/
+node_modules/
+skills/*/node_modules/
 desktop.ini
+.DS_Store
+Thumbs.db
