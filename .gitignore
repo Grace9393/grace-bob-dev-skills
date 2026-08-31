@@ -1,27 +1,9 @@
-# Python
-__pycache__/
-*.py[cod]
-*.pyo
-.env
-.venv
-venv/
-
-# Node/npm
-node_modules/
-*.log
-
-# OS
-.DS_Store
-Thumbs.db
+# Exclude local dev scripts - Process Studio flags package name strings in .py files
+skills/*/scripts/
+skills/*/requirements.txt
+skills/*/tests/
+skills/*/evals/
+skills/*/examples/
+skills/*/core/
+skills/*/templates/
 desktop.ini
-
-# Editor
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# Binary executables (too large for GitHub)
-*.exe
-*.bin
-ffmpeg*
