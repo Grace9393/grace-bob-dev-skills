@@ -12,9 +12,13 @@ Key guarantees:
   • Auto-paginates long content; never overflows shape bounds
 
 Dependencies:
-  pip install python-pptx==0.6.23 openpyxl pandas pdfplumber pillow \
-              markdown beautifulsoup4 pytesseract lxml
-  apt:  tesseract-ocr   (only needed for scanned PDFs / image OCR)
+  Required:  python-pptx  openpyxl  pandas  pdfplumber  pillow  lxml
+  Optional:  markdown     nicer .md parsing; a built-in fallback covers
+                          headings, lists, code, quotes and pipe tables
+             pypdf        extracting embedded images out of PDFs
+             pytesseract  OCR of scanned pages/images (+ apt tesseract-ocr)
+  Each optional package degrades to a documented fallback, so the converter
+  runs anywhere the required set is present.
 ================================================================================
 """
 
@@ -29,36 +33,80 @@ import pandas as pd
 import pdfplumber
 from PIL import Image
 from lxml import etree
+import lxml.html as lhtml
 
-# ── Vendored dependencies ────────────────────────────────────────────────
-# bs4, markdown, pypdf and pytesseract are not in every execution
-# environment's package set, so the skill ships them under ../vendor/
-# (pure-Python builds, no compiled extensions). The platform's own copy is
-# preferred when it exists; the vendored copy is the fallback. pytesseract
-# additionally needs the tesseract binary at run time, so OCR of scanned
-# pages degrades to a clear warning instead of an import crash.
+# ── Optional dependencies ────────────────────────────────────────────────
+# Only packages guaranteed by the execution environment are imported above.
+# Everything else is optional and its feature degrades with a clear message:
+#   markdown     nicer .md → HTML conversion (a built-in converter covers the
+#                common constructs when the package is absent)
+#   pypdf        extracting embedded images out of PDFs
+#   pytesseract  OCR of scanned pages / images (also needs the tesseract binary)
 import importlib
-import sys as _sys
-
-_VENDOR = str(Path(__file__).resolve().parent.parent / "vendor")
 
 
-def _load(name):
+def _opt(name):
+    """Return the module if importable, else None — the feature degrades."""
     try:
         return importlib.import_module(name)
     except ImportError:
-        if _VENDOR not in _sys.path:
-            _sys.path.append(_VENDOR)
-        return importlib.import_module(name)
+        return None
 
 
-md_lib = _load("markdown")
-BeautifulSoup = _load("bs4").BeautifulSoup
+md_lib = _opt("markdown")
+pytesseract = _opt("pytesseract")
 
-try:
-    pytesseract = _load("pytesseract")
-except ImportError:                      # binary-less environments: no OCR
-    pytesseract = None
+
+# ── HTML parsing on lxml (always present) ────────────────────────────────
+# A minimal element adapter exposing the small API _walk_html_blocks uses
+# (.name, .children, .get_text, .find_all(recursive=False), .parent, str()).
+class _El:
+    __slots__ = ("_e", "parent")
+
+    def __init__(self, el, parent=None):
+        self._e = el
+        self.parent = parent
+
+    @property
+    def name(self):
+        t = self._e.tag
+        return t.lower() if isinstance(t, str) else None
+
+    @property
+    def children(self):
+        e = self._e
+        if e.text and e.text.strip():
+            yield e.text
+        for c in e:
+            if isinstance(c.tag, str):
+                yield _El(c, self)
+            if c.tail and c.tail.strip():
+                yield c.tail
+
+    def get_text(self, strip=False, separator=""):
+        txt = separator.join(self._e.itertext())
+        return " ".join(txt.split()) if strip else txt
+
+    def find_all(self, names, recursive=True):
+        if isinstance(names, str):
+            names = [names]
+        names = {n.lower() for n in names}
+        pool = self._e.iter() if recursive else self._e
+        out = []
+        for c in pool:
+            if isinstance(getattr(c, "tag", None), str) and \
+                    c.tag.lower() in names and c is not self._e:
+                out.append(_El(c, self))
+        return out
+
+    def __str__(self):
+        return lhtml.tostring(self._e, encoding="unicode")
+
+
+def _parse_html(html: str) -> _El:
+    tree = lhtml.fromstring(html)
+    body = tree.find("body")
+    return _El(body if body is not None else tree)
 
 from pptx import Presentation
 from pptx.util import Inches, Pt, Emu
@@ -499,7 +547,10 @@ def handle_pdf(path: Path, prs: Presentation, brand: dict, opts: dict):
     images_by_page: dict[int, list[Path]] = {}
     if extract_images:
         try:
-            PdfReader = _load("pypdf").PdfReader
+            _pypdf = _opt("pypdf")
+            if _pypdf is None:
+                raise ImportError("pypdf not available")
+            PdfReader = _pypdf.PdfReader
             reader = PdfReader(str(path))
             tmp_dir = path.parent / f".pdf_imgs_{path.stem}"
             tmp_dir.mkdir(exist_ok=True)
@@ -541,6 +592,8 @@ def handle_pdf(path: Path, prs: Presentation, brand: dict, opts: dict):
             if not words and ocr_scanned:
                 try:
                     pil_img = page.to_image(resolution=200).original
+                    if pytesseract is None:
+                        raise RuntimeError("OCR unavailable")
                     ocr_text = pytesseract.image_to_string(pil_img) or ""
                 except Exception:
                     ocr_text = ""
@@ -929,17 +982,103 @@ def _render_html_slide(prs, brand, title, items, source_label):
 
 def handle_html(path: Path, prs: Presentation, brand: dict, opts: dict):
     html = Path(path).read_text(encoding="utf-8", errors="ignore")
-    soup = BeautifulSoup(html, "html.parser")
     src_label = (opts or {}).get("_source_label_override", path.name)
     # Walk top-level body (or root if no body) and yield structured blocks
-    root = soup.body or soup
+    root = _parse_html(html)
     blocks = list(_walk_html_blocks(root))
     _emit_html_blocks(blocks, prs, brand, src_label)
 
 
+def _mini_markdown(text: str) -> str:
+    """Fallback .md → HTML for environments without the markdown package.
+    Covers headings, bullets/numbered lists, fenced code, quotes, pipe
+    tables and paragraphs — the constructs this converter renders."""
+    out, lines = [], text.splitlines()
+    i, in_code, in_ul, in_ol = 0, False, False, False
+
+    def close_lists():
+        nonlocal in_ul, in_ol
+        if in_ul:
+            out.append("</ul>"); in_ul = False
+        if in_ol:
+            out.append("</ol>"); in_ol = False
+
+    def esc(s):
+        return (s.replace("&", "&amp;").replace("<", "&lt;")
+                 .replace(">", "&gt;"))
+
+    def inline(s):
+        s = esc(s)
+        s = re.sub(r"\*\*(.+?)\*\*", r"\1", s)
+        s = re.sub(r"(?<!\*)\*([^*]+)\*(?!\*)", r"\1", s)
+        s = re.sub(r"`([^`]+)`", r"\1", s)
+        return s
+
+    while i < len(lines):
+        ln = lines[i]
+        if ln.strip().startswith("```"):
+            if in_code:
+                out.append("</pre>")
+            else:
+                close_lists(); out.append("<pre>")
+            in_code = not in_code
+            i += 1
+            continue
+        if in_code:
+            out.append(esc(ln)); i += 1; continue
+        m = re.match(r"^(#{1,3})\s+(.*)$", ln)
+        if m:
+            close_lists()
+            out.append(f"<h{len(m.group(1))}>{inline(m.group(2))}"
+                       f"</h{len(m.group(1))}>")
+            i += 1; continue
+        if re.match(r"^\s*[-*+]\s+", ln):
+            if not in_ul:
+                close_lists(); out.append("<ul>"); in_ul = True
+            out.append("<li>" + inline(re.sub(r"^\s*[-*+]\s+", "", ln)) + "</li>")
+            i += 1; continue
+        if re.match(r"^\s*\d+[.)]\s+", ln):
+            if not in_ol:
+                close_lists(); out.append("<ol>"); in_ol = True
+            out.append("<li>" + inline(re.sub(r"^\s*\d+[.)]\s+", "", ln)) + "</li>")
+            i += 1; continue
+        if ln.strip().startswith(">"):
+            close_lists()
+            out.append("<blockquote>" + inline(ln.strip().lstrip("> ")) +
+                       "</blockquote>")
+            i += 1; continue
+        if "|" in ln and re.match(r"^\s*\|", ln):
+            close_lists()
+            rows = []
+            while i < len(lines) and lines[i].strip().startswith("|"):
+                cells = [c.strip() for c in lines[i].strip().strip("|").split("|")]
+                if not all(re.fullmatch(r":?-{2,}:?", c) for c in cells):
+                    rows.append(cells)
+                i += 1
+            if rows:
+                out.append("<table>")
+                for ri, row in enumerate(rows):
+                    tag = "th" if ri == 0 else "td"
+                    out.append("<tr>" + "".join(
+                        f"<{tag}>{inline(c)}</{tag}>" for c in row) + "</tr>")
+                out.append("</table>")
+            continue
+        if ln.strip():
+            close_lists()
+            out.append("<p>" + inline(ln.strip()) + "</p>")
+        i += 1
+    if in_code:
+        out.append("</pre>")
+    close_lists()
+    return "\n".join(out)
+
+
 def handle_md(path: Path, prs: Presentation, brand: dict, opts: dict):
-    html = md_lib.markdown(Path(path).read_text(encoding="utf-8"),
-                            extensions=["tables", "fenced_code"])
+    src = Path(path).read_text(encoding="utf-8")
+    if md_lib is not None:
+        html = md_lib.markdown(src, extensions=["tables", "fenced_code"])
+    else:
+        html = _mini_markdown(src)
     tmp = path.with_suffix(".tmp.html")
     tmp.write_text(html, encoding="utf-8")
     try:
@@ -1004,6 +1143,8 @@ def handle_image(path: Path, prs: Presentation, brand: dict, opts: dict):
     ocr_text = ""
     ocr_data = None
     try:
+        if pytesseract is None:
+            raise RuntimeError("OCR unavailable")
         ocr_text = pytesseract.image_to_string(img).strip()
         if mode == "overlay":
             ocr_data = pytesseract.image_to_data(
