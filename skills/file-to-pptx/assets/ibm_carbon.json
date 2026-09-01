@@ -1,27 +1,25 @@
 {
   "name": "IBM Carbon",
-  "extracted_from": ["Monday_Nestlé_IBM_AP_Diagnostic_Findings_Report_and_Roadmap.pptx",
-                    "client-presentation-finance-transformation.pptx"],
   "colors": {
-    "primary":    "0F62FE",
+    "primary": "0F62FE",
     "primary_dark": "003A6D",
-    "secondary":  "A56EFF",
-    "teal":       "009D9A",
-    "magenta":    "9F1853",
-    "red":        "FA4D56",
+    "secondary": "A56EFF",
+    "teal": "009D9A",
+    "magenta": "9F1853",
+    "red": "FA4D56",
     "title_bar_bg": "E5F6FF",
     "background": "FFFFFF",
     "text_primary": "161616",
-    "text_muted":   "6F6F6F",
+    "text_muted": "6F6F6F",
     "accent_yellow": "F1C21B",
     "accent_callout_bg": "FFF8E1"
   },
   "fonts": {
-    "title":   "IBM Plex Sans Light",
-    "header":  "IBM Plex Sans SemiBold",
-    "body":    "IBM Plex Sans",
+    "title": "IBM Plex Sans Light",
+    "header": "IBM Plex Sans SemiBold",
+    "body": "IBM Plex Sans",
     "fallback_title": "Calibri Light",
-    "fallback_body":  "Calibri"
+    "fallback_body": "Calibri"
   },
   "sizes_pt": {
     "title": 36,
@@ -36,6 +34,10 @@
     "title_top": 0.4,
     "footer_bottom": 0.25
   },
-  "slide_size_inches": { "width": 13.333, "height": 7.5 },
-  "footer_text": "IBM Consulting   |   Client Confidential"
+  "slide_size_inches": {
+    "width": 13.333,
+    "height": 7.5
+  },
+  "footer_text": "IBM Consulting   |   Client Confidential",
+  "provenance": "Derived from IBM Carbon design tokens."
 }
