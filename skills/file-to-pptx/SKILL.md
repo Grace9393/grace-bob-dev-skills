@@ -1,42 +1,39 @@
 ---
 name: file-to-pptx
-description: >-
-  Converts uploaded files into an editable, brand-templated PowerPoint (.pptx)
-  with editable charts/tables (not screenshots) and IBM Carbon branding by
-  default. Use whenever the user wants slides, a deck, a presentation, or a
-  pitch from uploads — including "turn into PowerPoint", "make a deck", "convert
-  to slides", or "report as slides". Also triggers on BPMN diagrams, business
-  process flows, or merging multiple files. Inputs: pptx, xlsx, csv, tsv, pdf,
-  html, md, txt, png, jpg, bpmn. MIT.
+description: "Convert uploaded files into a single editable, brand-templated PowerPoint deck (.pptx). Always use this skill whenever the user uploads or references any of these formats and wants slides, a deck, a presentation, a pitch, a report-as-slides, or asks to 'turn into PowerPoint', 'make a deck', 'convert to slides', or anything similar — even if they don't say the word 'skill' or 'convert'. Supported inputs: pptx, xlsx, xlsm, csv, tsv, pdf, html, htm, md, markdown, txt, png, jpg, jpeg, webp, gif, bmp, bpmn. Use this skill when the user wants editable charts and tables (not screenshots), a corporate brand applied (IBM Carbon by default), or multiple input files merged into one deck. Also use this skill when the user mentions BPMN diagrams, business process flows, AP/finance findings, or wants to combine spreadsheets and documents into one presentation."
+license: MIT
 ---
 
 # File → Editable PPTX (IBM-branded)
- 
+
 Convert any supported file (or set of files) into one editable, downloadable
 `.pptx` deck. Charts and tables are **native PowerPoint objects** — the user can
 double-click any chart to open the data grid in Excel, edit any table cell,
 and reposition any BPMN shape.
- 
+
 ## Quick Reference
- 
+
 | User has… | Run |
 |---|---|
 | One or more uploaded files | `python {SKILL}/scripts/universal_to_pptx.py <inputs...> --template {SKILL}/assets/ibm_template.pptx --brand {SKILL}/assets/ibm_carbon.json -o /mnt/user-data/outputs/<name>.pptx` |
 | A different brand to apply | Replace `--template` and `--brand` with the user's files |
 | No template handy | Omit both flags; the script falls back to the built-in IBM Carbon palette |
- 
+
 `{SKILL}` is the absolute path of this skill folder (e.g. `/mnt/skills/.../file-to-pptx`).
 Always pass absolute paths.
- 
+
 ## Standard Workflow
- 
+
 When the user uploads files and wants a deck:
- 
+
 1. **List the inputs.** Look at `/mnt/user-data/uploads/` to confirm what's
    there. Tell the user the detected files and their types in one short line.
+
 2. **Pick a descriptive output name.** Derive it from the user's intent
    (e.g. `q4_diagnostic_findings.pptx`), not generic names like `output.pptx`.
+
 3. **Run the converter** with the bundled IBM template and brand pack:
+
    ```bash
    python /path/to/file-to-pptx/scripts/universal_to_pptx.py \
      /mnt/user-data/uploads/file_a.md \
@@ -46,16 +43,19 @@ When the user uploads files and wants a deck:
      --brand    /path/to/file-to-pptx/assets/ibm_carbon.json \
      -o /mnt/user-data/outputs/<descriptive-name>.pptx
    ```
- 
+
    The script prints a JSON summary with `slide_count`, `sources`, and `warnings`.
    Surface the warnings to the user.
+
 4. **Deliver via `present_files`** — call it with the .pptx path so the user
    can download.
+
 5. **Tell the user three things in one short paragraph:** slide count,
    any lossy decisions (OCR was used, .xlsm macros dropped, etc.), and an
    editing tip — "the charts are native, double-click to edit the data."
+
 ## Format Routing (handled by the script)
- 
+
 | Input | Slide(s) produced |
 |---|---|
 | `.pptx` | Each source slide appended (shapes/text preserved) |
@@ -68,15 +68,15 @@ When the user uploads files and wants a deck:
 | `.txt` | First line → title; paragraphs → bullets; auto-paginates over 7 lines |
 | Image (png/jpg/webp/gif/bmp) | Configurable via `options["image_mode"]`: `"embed"` (default — full-bleed image, OCR text in speaker notes), `"transcript"` (image at half size on left, editable OCR text on right — best when the user wants to keep visual reference AND edit text), `"overlay"` (experimental — places editable textboxes over the image with sampled background fills; works for clean document scans, looks patchy on multi-color slides) |
 | `.bpmn` | One slide with native editable shapes — rounded rect = task, oval = start/end event, diamond = gateway |
- 
+
 A final **Source Index** slide is always appended (toggle off via
 `options["include_source_index_slide"] = False`).
- 
+
 ## Editability Guarantees
- 
+
 Every output slide consists of native, individually-clickable shapes. No
 flattened images of slides; no rasterized tables or charts. Specifically:
- 
+
 - **Charts** use `CategoryChartData` — double-click in PowerPoint to open
   the embedded Excel data grid.
 - **Tables** are native `add_table()` shapes — every cell editable; header
@@ -92,45 +92,48 @@ flattened images of slides; no rasterized tables or charts. Specifically:
 - **Image-transcript mode** keeps both the original image (visual fidelity)
   and an editable text frame (full editability) on one slide — pick this
   mode when both matter.
+
 ## Editable Charts (the key guarantee)
- 
+
 The script uses `python-pptx`'s `add_chart()` with `CategoryChartData`. This
 embeds an Excel workbook inside the .pptx. In PowerPoint or Keynote:
- 
+
 - Double-click any chart → the data grid opens in Excel
 - Editing values updates the chart immediately
 - Chart type (bar/line/pie) is auto-picked from data shape:
   - Date-like first column or > 12 rows → **line chart**
   - One numeric column with ≤ 6 rows → **pie chart**
   - Otherwise → **clustered column**
+
 Override via `options["xlsx_chart_mode"]` = `"always"`, `"auto"` (default), or `"never"`.
- 
+
 ## Brand Inheritance
- 
+
 The script opens `--template` with `python-pptx`, **strips the existing slides
 while keeping the slide masters / layouts / theme intact**, then writes new
 slides into that branded shell. This is how IBM Plex fonts, Carbon colors, and
 the IBM Consulting footer carry through automatically.
- 
+
 To apply a different brand:
 1. Drop the new corporate `.pptx` template into the user's uploads.
 2. (Optional) Generate a matching brand JSON — same shape as `ibm_carbon.json`.
 3. Pass both via `--template` and `--brand`.
+
 ## Dependencies
- 
+
 The script needs:
- 
+
 ```bash
 pip install python-pptx openpyxl pandas pdfplumber pillow markdown \
             beautifulsoup4 pytesseract lxml
 # system: tesseract-ocr   (only needed for scanned PDFs and image OCR)
 ```
- 
+
 In Anthropic's standard sandboxed environment these are typically already
 installed. If `python-pptx` is missing, install with `--break-system-packages`.
- 
+
 ## Common Pitfalls (already handled, but worth knowing)
- 
+
 - **"NA" parsed as NaN**: pandas treats "NA" (a valid region code) as missing
   by default. The script reads spreadsheets with `keep_default_na=False` to
   preserve the literal string.
@@ -143,26 +146,28 @@ installed. If `python-pptx` is missing, install with `--break-system-packages`.
   use the native chart path. If a source xlsx has charts inside it that
   python-pptx can't recreate, fall back to a native chart from the same data
   rather than a screenshot.
+
 ## QA Checklist Before Delivery
- 
+
 Before calling `present_files`, confirm:
- 
+
 - [ ] The output exists at `/mnt/user-data/outputs/...`
 - [ ] The `slide_count` looks reasonable (one per page, sheet, or h2 section)
 - [ ] `warnings` is empty, or each warning is surfaced to the user
 - [ ] The filename describes the content (not `output.pptx`)
+
 Optional visual QA — render with LibreOffice and inspect:
- 
+
 ```bash
 python /mnt/skills/public/pptx/scripts/office/soffice.py --headless --convert-to pdf <output>.pptx
 pdftoppm -jpeg -r 110 <output>.pdf slide
 ```
- 
+
 Use `view slide-N.jpg` on a few pages to spot overflow, missing footers,
 or unbranded color drift.
- 
+
 ## When NOT to use this skill
- 
+
 - The user wants to **read** a `.pptx` (extract text/data) — use the `pptx`
   skill instead.
 - The user wants to **create slides from scratch** with no input file —
