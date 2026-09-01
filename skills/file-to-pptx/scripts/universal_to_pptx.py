@@ -27,11 +27,38 @@ from typing import Iterable
 
 import pandas as pd
 import pdfplumber
-import pytesseract
 from PIL import Image
-import markdown as md_lib
-from bs4 import BeautifulSoup
 from lxml import etree
+
+# ── Vendored dependencies ────────────────────────────────────────────────
+# bs4, markdown, pypdf and pytesseract are not in every execution
+# environment's package set, so the skill ships them under ../vendor/
+# (pure-Python builds, no compiled extensions). The platform's own copy is
+# preferred when it exists; the vendored copy is the fallback. pytesseract
+# additionally needs the tesseract binary at run time, so OCR of scanned
+# pages degrades to a clear warning instead of an import crash.
+import importlib
+import sys as _sys
+
+_VENDOR = str(Path(__file__).resolve().parent.parent / "vendor")
+
+
+def _load(name):
+    try:
+        return importlib.import_module(name)
+    except ImportError:
+        if _VENDOR not in _sys.path:
+            _sys.path.append(_VENDOR)
+        return importlib.import_module(name)
+
+
+md_lib = _load("markdown")
+BeautifulSoup = _load("bs4").BeautifulSoup
+
+try:
+    pytesseract = _load("pytesseract")
+except ImportError:                      # binary-less environments: no OCR
+    pytesseract = None
 
 from pptx import Presentation
 from pptx.util import Inches, Pt, Emu
@@ -472,7 +499,7 @@ def handle_pdf(path: Path, prs: Presentation, brand: dict, opts: dict):
     images_by_page: dict[int, list[Path]] = {}
     if extract_images:
         try:
-            from pypdf import PdfReader
+            PdfReader = _load("pypdf").PdfReader
             reader = PdfReader(str(path))
             tmp_dir = path.parent / f".pdf_imgs_{path.stem}"
             tmp_dir.mkdir(exist_ok=True)
