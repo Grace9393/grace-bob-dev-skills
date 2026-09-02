@@ -2,7 +2,10 @@
 name: file-to-pptx
 description: "Convert uploaded files into a single editable, brand-templated PowerPoint deck (.pptx). Always use this skill whenever the user uploads or references any of these formats and wants slides, a deck, a presentation, a pitch, a report-as-slides, or asks to 'turn into PowerPoint', 'make a deck', 'convert to slides', or anything similar — even if they don't say the word 'skill' or 'convert'. Supported inputs: pptx, xlsx, xlsm, csv, tsv, pdf, html, htm, md, markdown, txt, png, jpg, jpeg, webp, gif, bmp, bpmn. Use this skill when the user wants editable charts and tables (not screenshots), a corporate brand applied (IBM Carbon by default), or multiple input files merged into one deck. Also use this skill when the user mentions BPMN diagrams, business process flows, AP/finance findings, or wants to combine spreadsheets and documents into one presentation."
 license: MIT
-allowed-tools: Read, Write, Bash
+allowed-tools:
+  - Read
+  - Write
+  - Bash
 
 ---
 
