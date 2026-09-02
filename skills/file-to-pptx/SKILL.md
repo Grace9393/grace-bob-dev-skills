@@ -6,6 +6,10 @@ allowed-tools:
   - Read
   - Write
   - Bash
+  - list_skill_files
+  - read_skill_file
+  - write_temp_file
+  - run_skill_script
 
 ---
 
