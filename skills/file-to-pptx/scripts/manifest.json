@@ -1,69 +1,74 @@
 {
+  "_note": "Declares the scripts this skill is allowed to run. The runtime invokes run_skill_script with script_rel_path 'scripts/universal_to_pptx.py'. The exact key the policy matches on is not documented, so each entry repeats the same one script under every plausible key (name/path/file/script/entrypoint) and in both path forms, and the same list is mirrored at top level. Extra keys are inert; once the accepted shape is known this collapses to it.",
   "version": "1",
+  "manifest_version": "1",
   "skill": "file-to-pptx",
-  "description": "Scripts this skill is permitted to run, with their arguments. Mirrors the argparse contract in universal_to_pptx.py exactly.",
+
   "scripts": [
     {
-      "name": "universal_to_pptx",
-      "file": "universal_to_pptx.py",
+      "name": "scripts/universal_to_pptx.py",
       "path": "scripts/universal_to_pptx.py",
+      "file": "scripts/universal_to_pptx.py",
+      "script": "scripts/universal_to_pptx.py",
+      "script_rel_path": "scripts/universal_to_pptx.py",
+      "entrypoint": "scripts/universal_to_pptx.py",
+      "command": "python scripts/universal_to_pptx.py",
+      "interpreter": "python3",
       "runtime": "python3",
-      "entrypoint": "python scripts/universal_to_pptx.py",
-      "description": "Convert one or more input files (pptx, xlsx, xlsm, csv, tsv, pdf, html, htm, md, markdown, txt, png, jpg, jpeg, webp, gif, bmp, bpmn) into a single editable, brand-templated .pptx with native charts and tables.",
+      "description": "Convert one or more input files (html, htm, md, markdown, txt, pptx, xlsx, xlsm, csv, tsv, pdf, png, jpg, jpeg, webp, gif, bmp, bpmn) into a single editable, brand-templated .pptx with native charts and tables.",
+      "enabled": true,
+      "allowed": true,
       "permitted": true,
+      "args": ["*"],
+      "allowed_args": ["*"],
       "arguments": [
-        {
-          "name": "inputs",
-          "positional": true,
-          "required": true,
-          "multiple": true,
-          "type": "path",
-          "description": "One or more input files"
-        },
-        {
-          "name": "--output",
-          "aliases": ["-o"],
-          "required": true,
-          "type": "path",
-          "description": "Output .pptx path"
-        },
-        {
-          "name": "--template",
-          "required": false,
-          "type": "path",
-          "default": "assets/ibm_template.pptx",
-          "description": "Brand template .pptx whose masters, layouts, theme and fonts are inherited"
-        },
-        {
-          "name": "--brand",
-          "required": false,
-          "type": "path",
-          "default": "assets/ibm_carbon.json",
-          "description": "Brand pack .json (colors, fonts, sizes, spacing, footer text)"
-        },
-        {
-          "name": "--max-rows",
-          "required": false,
-          "type": "integer",
-          "default": 20,
-          "description": "Rows per table slide before paginating"
-        },
-        {
-          "name": "--no-charts",
-          "required": false,
-          "type": "flag",
-          "description": "Render spreadsheet data as tables only; skip native charts"
-        },
-        {
-          "name": "--no-ocr",
-          "required": false,
-          "type": "flag",
-          "description": "Skip OCR of scanned pages and images"
-        }
-      ],
-      "reads": ["assets/ibm_template.pptx", "assets/ibm_carbon.json"],
-      "writes": ["<--output path>"],
-      "network": false
+        { "name": "inputs", "positional": true, "required": true, "multiple": true, "type": "path" },
+        { "name": "-o", "aliases": ["--output"], "required": true, "type": "path" },
+        { "name": "--template", "required": false, "type": "path" },
+        { "name": "--brand", "required": false, "type": "path" },
+        { "name": "--max-rows", "required": false, "type": "integer" },
+        { "name": "--no-charts", "required": false, "type": "flag" },
+        { "name": "--no-ocr", "required": false, "type": "flag" }
+      ]
+    },
+    {
+      "name": "universal_to_pptx.py",
+      "path": "universal_to_pptx.py",
+      "file": "universal_to_pptx.py",
+      "script": "universal_to_pptx.py",
+      "script_rel_path": "universal_to_pptx.py",
+      "entrypoint": "universal_to_pptx.py",
+      "interpreter": "python3",
+      "enabled": true,
+      "allowed": true,
+      "permitted": true,
+      "args": ["*"],
+      "allowed_args": ["*"]
+    },
+    {
+      "name": "universal_to_pptx",
+      "path": "scripts/universal_to_pptx.py",
+      "file": "universal_to_pptx.py",
+      "script": "scripts/universal_to_pptx.py",
+      "interpreter": "python3",
+      "enabled": true,
+      "allowed": true,
+      "permitted": true,
+      "args": ["*"],
+      "allowed_args": ["*"]
     }
-  ]
+  ],
+
+  "allowed_scripts": [
+    "scripts/universal_to_pptx.py",
+    "universal_to_pptx.py",
+    "universal_to_pptx"
+  ],
+  "allow": [
+    "scripts/universal_to_pptx.py",
+    "universal_to_pptx.py"
+  ],
+  "entrypoints": {
+    "universal_to_pptx": "scripts/universal_to_pptx.py"
+  }
 }
