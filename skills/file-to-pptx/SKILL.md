@@ -20,12 +20,21 @@ and reposition any BPMN shape.
 
 | User has… | Run |
 |---|---|
-| One or more uploaded files | `python {SKILL}/scripts/universal_to_pptx.py <inputs...> --template {SKILL}/assets/ibm_template.pptx --brand {SKILL}/assets/ibm_carbon.json -o /mnt/user-data/outputs/<name>.pptx` |
-| A different brand to apply | Replace `--template` and `--brand` with the user's files |
+| One or more uploaded files | `python {SKILL}/scripts/universal_to_pptx.py <inputs...> -o /mnt/user-data/outputs/<name>.pptx` |
+| A different brand to apply | Add `--template <their .pptx> --brand <their .json>` |
 | No template handy | Omit both flags; the script falls back to the built-in IBM Carbon palette |
 
 `{SKILL}` is the absolute path of this skill folder (e.g. `/mnt/skills/.../file-to-pptx`).
 Always pass absolute paths.
+
+## Brand assets
+
+The IBM template and Carbon brand pack ship inside the bundle at
+`scripts/assets/` and the converter resolves them itself, so **the normal
+command passes no `--template` or `--brand`**. They live under `scripts/`
+because the execution policy requires every skill file the runtime touches to
+sit there; passing the flags explicitly still overrides the defaults when a
+different brand is wanted.
 
 ## Standard Workflow
 
@@ -44,8 +53,6 @@ When the user uploads files and wants a deck:
      /mnt/user-data/uploads/file_a.md \
      /mnt/user-data/uploads/file_b.xlsx \
      /mnt/user-data/uploads/file_c.pdf \
-     --template /path/to/file-to-pptx/assets/ibm_template.pptx \
-     --brand    /path/to/file-to-pptx/assets/ibm_carbon.json \
      -o /mnt/user-data/outputs/<descriptive-name>.pptx
    ```
 
@@ -114,7 +121,7 @@ Override via `options["xlsx_chart_mode"]` = `"always"`, `"auto"` (default), or `
 
 ## Brand Inheritance
 
-The script opens `--template` with `python-pptx`, **strips the existing slides
+The script opens the template with `python-pptx`, **strips the existing slides
 while keeping the slide masters / layouts / theme intact**, then writes new
 slides into that branded shell. This is how IBM Plex fonts, Carbon colors, and
 the IBM Consulting footer carry through automatically.

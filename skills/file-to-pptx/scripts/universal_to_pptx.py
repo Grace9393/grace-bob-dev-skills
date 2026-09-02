@@ -1503,8 +1503,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Universal File → PPTX")
     parser.add_argument("inputs", nargs="+", help="One or more input files")
     parser.add_argument("-o", "--output", required=True, help="Output .pptx path")
-    parser.add_argument("--template", help="Brand template .pptx (optional)")
-    parser.add_argument("--brand",    help="Brand pack .json (optional)")
+    parser.add_argument("--template", help="Brand template .pptx "
+                        "(optional; defaults to the bundled IBM template)")
+    parser.add_argument("--brand",    help="Brand pack .json "
+                        "(optional; defaults to the bundled IBM Carbon pack)")
     parser.add_argument("--max-rows", type=int, default=20)
     parser.add_argument("--no-charts", action="store_true")
     parser.add_argument("--no-ocr",    action="store_true")
@@ -1516,8 +1518,23 @@ if __name__ == "__main__":
         "ocr_scanned_pdfs": not args.no_ocr,
         "include_source_index_slide": True,
     }
+    # Resolve the brand assets from inside the bundle when not passed.
+    # They live beside this script (scripts/assets/) because the execution
+    # policy requires every skill file the runtime touches to sit under
+    # scripts/. Older layouts kept them at the skill root, so that is checked
+    # as a fallback. Passing --template / --brand still overrides both.
+    _here = Path(__file__).resolve().parent
+    def _bundled(name):
+        for cand in (_here / "assets" / name, _here.parent / "assets" / name):
+            if cand.is_file():
+                return str(cand)
+        return None
+
+    template_path = args.template or _bundled("ibm_template.pptx")
+    brand_path = args.brand or _bundled("ibm_carbon.json")
+
     result = convert_to_pptx(args.inputs, args.output,
-                             template_path=args.template,
-                             brand_path=args.brand,
+                             template_path=template_path,
+                             brand_path=brand_path,
                              options=opts)
     print(json.dumps(result, indent=2))
